@@ -1,0 +1,13 @@
+# Ambiente virtual e caches do Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+
+# Arquivos gerados pelo pipeline (são recriados com `python -m food_intelligence.train`)
+data/raw/
+artifacts/
+
+# Segredos locais
+.env
