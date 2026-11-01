@@ -35,8 +35,8 @@ class ChurnRequest(BaseModel):
 
     recency_days: int = Field(ge=0, description="Dias desde o último pedido")
     frequency_90d: int = Field(ge=0, description="Pedidos nos últimos 90 dias")
-    monetary_90d: float = Field(ge=0, description="Faturamento nos últimos 90 dias (R$)")
-    avg_order_value: float = Field(ge=0, description="Ticket médio por pedido (R$)")
+    monetary_90d: float = Field(ge=0, allow_inf_nan=False, description="Faturamento nos últimos 90 dias (R$)")
+    avg_order_value: float = Field(ge=0, allow_inf_nan=False, description="Ticket médio por pedido (R$)")
     n_categories: int = Field(ge=0, description="Categorias diferentes compradas")
     tenure_days: int = Field(ge=0, description="Dias desde o primeiro pedido")
 
@@ -63,9 +63,9 @@ class RecommendationResponse(BaseModel):
 
 class ElasticityRequest(BaseModel):
     product_id: str
-    current_price: float = Field(gt=0, description="Preço atual (R$)")
-    new_price: float = Field(gt=0, description="Preço proposto (R$)")
-    current_quantity: float = Field(gt=0, description="Quantidade vendida hoje")
+    current_price: float = Field(gt=0, allow_inf_nan=False, description="Preço atual (R$)")
+    new_price: float = Field(gt=0, allow_inf_nan=False, description="Preço proposto (R$)")
+    current_quantity: float = Field(gt=0, allow_inf_nan=False, description="Quantidade vendida hoje")
 
 
 class ElasticityResponse(BaseModel):
