@@ -61,6 +61,8 @@ A documentação interativa fica em `http://127.0.0.1:8000/docs`.
 
 Confirme o módulo de importação e a configuração do projeto caso execute a API a partir de outro diretório.
 
+Para instruções detalhadas, exemplos de chamadas e fluxo de treino, consulte o [Guia de Uso](docs/GUIA_DE_USO.md) e a [decisão de arquitetura](docs/adr/0001-stack-treino-e-api.md).
+
 ## Organização do código
 
 - `src/food_intelligence/api.py`: camada HTTP.
