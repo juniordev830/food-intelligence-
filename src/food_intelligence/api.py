@@ -12,7 +12,7 @@ Por isso, você NÃO precisa reiniciar o servidor depois de treinar de novo.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 import joblib
 import pandas as pd
@@ -48,7 +48,7 @@ class ChurnResponse(BaseModel):
 
 
 class RecommendationRequest(BaseModel):
-    purchased_product_ids: list[str] = Field(min_length=1, description="Produtos que o cliente já comprou")
+    purchased_product_ids: list[Annotated[str, Field(min_length=1, max_length=128)]] = Field(min_length=1, max_length=100, description="Produtos que o cliente já comprou (máximo de 100 IDs)")
     top_n: int = Field(default=5, ge=1, le=20)
 
 
