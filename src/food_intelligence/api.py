@@ -48,7 +48,7 @@ class ChurnResponse(BaseModel):
 
 
 class RecommendationRequest(BaseModel):
-    purchased_product_ids: list[str] = Field(min_length=1, description="Produtos que o cliente já comprou")
+    purchased_product_ids: list[str] = Field(min_length=1, max_length=500, description="Produtos que o cliente já comprou (máximo de 500 itens)")
     top_n: int = Field(default=5, ge=1, le=20)
 
 
@@ -62,7 +62,7 @@ class RecommendationResponse(BaseModel):
 
 
 class ElasticityRequest(BaseModel):
-    product_id: str
+    product_id: str = Field(min_length=1, max_length=100)
     current_price: float = Field(gt=0, allow_inf_nan=False, description="Preço atual (R$)")
     new_price: float = Field(gt=0, allow_inf_nan=False, description="Preço proposto (R$)")
     current_quantity: float = Field(gt=0, allow_inf_nan=False, description="Quantidade vendida hoje")
