@@ -95,3 +95,19 @@ def test_model_store_reloads_artifact_when_file_changes(tmp_path):
     )
 
     assert store.get("sample") == {"version": 2}
+
+def test_recommendation_rejects_more_than_100_product_ids(client):
+    response = client.post(
+        "/recommendations",
+        json={"purchased_product_ids": [f"P{i:03}" for i in range(101)]},
+    )
+    assert response.status_code == 422
+
+
+def test_recommendation_rejects_empty_or_oversized_product_ids(client):
+    empty = client.post("/recommendations", json={"purchased_product_ids": [""]})
+    oversized = client.post(
+        "/recommendations", json={"purchased_product_ids": ["P" * 129]}
+    )
+    assert empty.status_code == 422
+    assert oversized.status_code == 422
