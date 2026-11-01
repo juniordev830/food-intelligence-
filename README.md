@@ -63,14 +63,14 @@ Confirme o módulo de importação e a configuração do projeto caso execute a 
 
 ## Organização do código
 
-- `api.py`: camada HTTP.
-- `config.py`: configuração do projeto.
-- `data_generator.py`: geração de dados sintéticos.
-- `features.py`: preparação de atributos.
-- `churn.py`: experimento de churn.
-- `recommender.py`: lógica de recomendação.
-- `elasticity.py`: experimento de elasticidade-preço.
-- `train.py`: fluxo de treinamento.
+- `src/food_intelligence/api.py`: camada HTTP.
+- `src/food_intelligence/config.py`: configuração e caminhos.
+- `src/food_intelligence/data_generator.py`: geração de dados sintéticos.
+- `src/food_intelligence/features.py`: preparação de atributos.
+- `src/food_intelligence/churn.py`: experimento de churn.
+- `src/food_intelligence/recommender.py`: recomendação de produtos.
+- `src/food_intelligence/elasticity.py`: elasticidade-preço.
+- `src/food_intelligence/train.py`: fluxo de treinamento.
 - `tests/`: testes automatizados.
 
 ## Reprodutibilidade e qualidade
