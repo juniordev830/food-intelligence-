@@ -57,7 +57,7 @@ A API está em `src/food_intelligence/api.py`. Depois de instalar o pacote, exec
 uvicorn food_intelligence.api:app --reload
 ```
 
-A documentação interativa fica em `http://127.0.0.1:8000/docs`.
+A documentação interativa fica em `http://127.0.0.1:8000/docs`. Os endpoints de predição dependem dos artefatos de modelo treinados; se estiverem ausentes, a API responde HTTP 503 e orienta executar `python -m food_intelligence.train`. O servidor local não publica a API na internet automaticamente.
 
 Confirme o módulo de importação e a configuração do projeto caso execute a API a partir de outro diretório.
 
@@ -73,7 +73,7 @@ Para instruções detalhadas, exemplos de chamadas e fluxo de treino, consulte o
 - `src/food_intelligence/recommender.py`: recomendação de produtos.
 - `src/food_intelligence/elasticity.py`: elasticidade-preço.
 - `src/food_intelligence/train.py`: fluxo de treinamento.
-- `tests/`: testes automatizados.
+- `tests/` e arquivos `test_*.py` na raiz: testes automatizados.
 
 ## Reprodutibilidade e qualidade
 
@@ -87,7 +87,7 @@ Para instruções detalhadas, exemplos de chamadas e fluxo de treino, consulte o
 
 - Documentar esquemas de entrada/saída dos endpoints.
 - Adicionar baseline simples e métricas de avaliação reproduzíveis.
-- Criar workflow CI para testes e verificações de estilo.
+- Expandir a cobertura de testes de contrato da API e os relatórios de avaliação dos modelos.
 - Versionar datasets sintéticos e relatórios de experimentos sem incluir artefatos grandes desnecessários.
 
 Projeto de portfólio em desenvolvimento.
