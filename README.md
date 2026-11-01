@@ -51,11 +51,13 @@ pytest
 
 ## API
 
-Consulte `api.py` e a documentação do FastAPI para identificar os endpoints atualmente disponíveis. Se o módulo exportar `app`, a execução pode ser iniciada com:
+A API está em `src/food_intelligence/api.py`. Depois de instalar o pacote, execute:
 
 ```bash
-uvicorn api:app --reload
+uvicorn food_intelligence.api:app --reload
 ```
+
+A documentação interativa fica em `http://127.0.0.1:8000/docs`.
 
 Confirme o módulo de importação e a configuração do projeto caso execute a API a partir de outro diretório.
 
