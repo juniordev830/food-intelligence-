@@ -1,9 +1,12 @@
 """Testes da API usando o TestClient (sem precisar subir o servidor)."""
 
+import os
+
+import joblib
 import pytest
 from fastapi.testclient import TestClient
 
-from food_intelligence.api import create_app
+from food_intelligence.api import ModelStore, create_app
 
 CHURN_PAYLOAD = {
     "recency_days": 10,
@@ -74,3 +77,21 @@ def test_sem_modelos_treinados_a_api_responde_503(tmp_path):
     response = empty_client.post("/churn/predict", json=CHURN_PAYLOAD)
     assert response.status_code == 503
     assert "food_intelligence.train" in response.json()["detail"]
+
+
+
+def test_model_store_reloads_artifact_when_file_changes(tmp_path):
+    artifact = tmp_path / "sample.joblib"
+    joblib.dump({"version": 1}, artifact)
+    store = ModelStore(tmp_path)
+
+    assert store.get("sample") == {"version": 1}
+    previous_stat = artifact.stat()
+
+    joblib.dump({"version": 2}, artifact)
+    os.utime(
+        artifact,
+        ns=(previous_stat.st_atime_ns, previous_stat.st_mtime_ns + 1_000_000_000),
+    )
+
+    assert store.get("sample") == {"version": 2}
