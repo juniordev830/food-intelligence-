@@ -83,15 +83,20 @@ class ModelStore:
 
     def __init__(self, directory: Path):
         self.directory = directory
-        self._cache: dict[str, Any] = {}
+        self._cache: dict[str, tuple[int, int, Any]] = {}
 
     def get(self, name: str) -> Any:
-        if name not in self._cache:
-            path = self.directory / f"{name}.joblib"
-            if not path.exists():
-                raise FileNotFoundError(path)
-            self._cache[name] = joblib.load(path)
-        return self._cache[name]
+        path = self.directory / f"{name}.joblib"
+        try:
+            stat = path.stat()
+        except FileNotFoundError:
+            raise FileNotFoundError(path) from None
+
+        cached = self._cache.get(name)
+        signature = (stat.st_mtime_ns, stat.st_size)
+        if cached is None or cached[:2] != signature:
+            self._cache[name] = (*signature, joblib.load(path))
+        return self._cache[name][2]
 
 
 def _load_or_503(store: ModelStore, name: str) -> Any:
