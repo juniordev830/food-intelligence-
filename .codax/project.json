@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "project_kind": "Modelos de dados e API Python",
+  "entry_points": [
+    "src/food_intelligence/api.py",
+    "src/food_intelligence/train.py"
+  ],
+  "test_commands": [
+    "pytest"
+  ],
+  "review_focus": [
+    "Vazamento entre treino e teste e artefatos serializados",
+    "Validação de entradas da API e reprodutibilidade"
+  ]
+}
