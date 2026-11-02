@@ -28,20 +28,34 @@ def estimate_elasticities(orders: pd.DataFrame) -> pd.DataFrame:
     """Estima a elasticidade de cada produto. Retorna um DataFrame indexado por product_id."""
     rows = []
     for product_id, group in orders.groupby("product_id"):
-        if len(group) < MIN_OBSERVATIONS:
+        # CSVs reais podem conter zeros, valores negativos, ausentes ou infinitos.
+        # log(preço) e log(quantidade) só são definidos para valores positivos e finitos.
+        valid = group[["unit_price", "quantity"]].apply(pd.to_numeric, errors="coerce")
+        valid = valid.replace([np.inf, -np.inf], np.nan).dropna()
+        valid = valid[(valid["unit_price"] > 0) & (valid["quantity"] > 0)]
+        if len(valid) < MIN_OBSERVATIONS:
             continue
 
-        # Transformação logarítmica: o coeficiente da regressão vira a elasticidade
-        X = np.log(group[["unit_price"]].to_numpy())
-        y = np.log(group["quantity"].to_numpy())
+        # Regressão log-log exige variação de preço para estimar elasticidade.
+        log_price = np.log(valid["unit_price"].to_numpy(dtype=float))
+        log_quantity = np.log(valid["quantity"].to_numpy(dtype=float))
+        if (not np.isfinite(log_price).all() or not np.isfinite(log_quantity).all()
+                or np.ptp(log_price) <= 1e-10):
+            continue
 
+        X = log_price.reshape(-1, 1)
+        y = log_quantity
         reg = LinearRegression().fit(X, y)
+        coefficient = float(reg.coef_[0])
+        r2 = float(reg.score(X, y))
+        if not np.isfinite(coefficient) or not np.isfinite(r2):
+            continue
         rows.append(
             {
                 "product_id": product_id,
-                "elasticity": round(float(reg.coef_[0]), 4),
-                "r2": round(float(reg.score(X, y)), 4),  # quanto do comportamento o preço explica
-                "n_obs": int(len(group)),
+                "elasticity": round(coefficient, 4),
+                "r2": round(r2, 4),  # quanto do comportamento o preço explica
+                "n_obs": int(len(valid)),
             }
         )
 
