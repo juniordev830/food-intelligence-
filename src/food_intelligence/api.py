@@ -17,7 +17,7 @@ from typing import Any
 import joblib
 import pandas as pd
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from food_intelligence import config
 from food_intelligence.churn import predict_churn_proba, risk_level
@@ -51,6 +51,14 @@ class RecommendationRequest(BaseModel):
     purchased_product_ids: list[str] = Field(min_length=1, max_length=500, description="Produtos que o cliente já comprou (máximo de 500 itens)")
     top_n: int = Field(default=5, ge=1, le=20)
 
+    @field_validator("purchased_product_ids")
+    @classmethod
+    def normalize_purchased_product_ids(cls, values: list[str]) -> list[str]:
+        normalized = [value.strip() for value in values]
+        if any(not value for value in normalized):
+            raise ValueError("IDs de produto não podem ser vazios")
+        return normalized
+
 
 class RecommendationItem(BaseModel):
     product_id: str
@@ -66,6 +74,14 @@ class ElasticityRequest(BaseModel):
     current_price: float = Field(gt=0, allow_inf_nan=False, description="Preço atual (R$)")
     new_price: float = Field(gt=0, allow_inf_nan=False, description="Preço proposto (R$)")
     current_quantity: float = Field(gt=0, allow_inf_nan=False, description="Quantidade vendida hoje")
+
+    @field_validator("product_id")
+    @classmethod
+    def normalize_product_id(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("ID de produto não pode ser vazio")
+        return normalized
 
 
 class ElasticityResponse(BaseModel):
