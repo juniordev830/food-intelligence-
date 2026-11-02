@@ -71,7 +71,7 @@ Para instruções detalhadas, exemplos de chamadas e fluxo de treino, consulte o
 - `src/food_intelligence/features.py`: preparação de atributos.
 - `src/food_intelligence/churn.py`: experimento de churn.
 - `src/food_intelligence/recommender.py`: recomendação de produtos.
-- `src/food_intelligence/elasticity.py`: elasticidade-preço.
+- `src/food_intelligence/elasticity.py`: elasticidade-preço; descarta vendas com preços ou quantidades ausentes, não numéricos, infinitos ou não positivos antes do logaritmo. Somente estima produtos com pelo menos 10 observações válidas e variação de preço.
 - `src/food_intelligence/train.py`: fluxo de treinamento.
 - `tests/` e arquivos `test_*.py` na raiz: testes automatizados.
 
