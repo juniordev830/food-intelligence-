@@ -48,3 +48,13 @@ def test_elasticity_request_rejects_empty_or_oversized_product_id():
         ElasticityRequest(product_id="", current_price=10.0, new_price=12.0, current_quantity=5.0)
     with pytest.raises(ValidationError):
         ElasticityRequest(product_id="x" * 101, current_price=10.0, new_price=12.0, current_quantity=5.0)
+
+
+def test_recommendation_request_rejects_oversized_purchased_product_id():
+    with pytest.raises(ValidationError):
+        RecommendationRequest(purchased_product_ids=["x" * 101])
+
+
+def test_recommendation_request_accepts_100_character_product_id():
+    request = RecommendationRequest(purchased_product_ids=["x" * 100])
+    assert len(request.purchased_product_ids[0]) == 100
