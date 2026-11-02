@@ -26,6 +26,7 @@ from food_intelligence.features import FEATURE_COLUMNS
 from food_intelligence.recommender import recommend
 
 TRAIN_HINT = "Modelo ainda não treinado. Rode: python -m food_intelligence.train"
+MAX_PRODUCT_ID_LENGTH = 100
 
 
 # ---------- Schemas: definem e validam o formato de entrada e saída ----------
@@ -57,6 +58,8 @@ class RecommendationRequest(BaseModel):
         normalized = [value.strip() for value in values]
         if any(not value for value in normalized):
             raise ValueError("IDs de produto não podem ser vazios")
+        if any(len(value) > MAX_PRODUCT_ID_LENGTH for value in normalized):
+            raise ValueError(f"IDs de produto devem ter no máximo {MAX_PRODUCT_ID_LENGTH} caracteres")
         return normalized
 
 
@@ -70,7 +73,7 @@ class RecommendationResponse(BaseModel):
 
 
 class ElasticityRequest(BaseModel):
-    product_id: str = Field(min_length=1, max_length=100)
+    product_id: str = Field(min_length=1, max_length=MAX_PRODUCT_ID_LENGTH)
     current_price: float = Field(gt=0, allow_inf_nan=False, description="Preço atual (R$)")
     new_price: float = Field(gt=0, allow_inf_nan=False, description="Preço proposto (R$)")
     current_quantity: float = Field(gt=0, allow_inf_nan=False, description="Quantidade vendida hoje")
@@ -111,6 +114,8 @@ class ModelStore:
         cached = self._cache.get(name)
         signature = (stat.st_mtime_ns, stat.st_size)
         if cached is None or cached[:2] != signature:
+            # joblib/pickle can execute code while loading: only load artifacts
+            # produced by this project or another trusted training pipeline.
             self._cache[name] = (*signature, joblib.load(path))
         return self._cache[name][2]
 
@@ -143,7 +148,6 @@ def create_app(artifacts_dir: Path = config.ARTIFACTS_DIR) -> FastAPI:
     def predict_churn(body: ChurnRequest) -> ChurnResponse:
         """Probabilidade de um cliente parar de comprar nos próximos 60 dias."""
         model = _load_or_503(store, "churn_model")
-        # Monta uma linha com as colunas na mesma ordem usada no treino
         row = pd.DataFrame([body.model_dump()])[FEATURE_COLUMNS]
         probability = float(predict_churn_proba(model, row)[0])
         return ChurnResponse(
@@ -158,7 +162,7 @@ def create_app(artifacts_dir: Path = config.ARTIFACTS_DIR) -> FastAPI:
         similarity = _load_or_503(store, "recommender")
         try:
             items = recommend(similarity, body.purchased_product_ids, body.top_n)
-        except ValueError as exc:  # produto que não existe no catálogo
+        except ValueError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
         return RecommendationResponse(recommendations=items)
 
