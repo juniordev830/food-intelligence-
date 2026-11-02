@@ -15,6 +15,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import tempfile
 from pathlib import Path
 
 import joblib
@@ -26,6 +28,18 @@ from food_intelligence.data_generator import generate_dataset, load_tables, save
 from food_intelligence.elasticity import estimate_elasticities
 from food_intelligence.features import build_churn_labels, build_customer_features
 from food_intelligence.recommender import build_similarity
+
+
+def atomic_dump(value, path: Path) -> None:
+    """Publish a complete artifact: readers see the old or new file, never a partial write."""
+    fd, temporary = tempfile.mkstemp(dir=path.parent, suffix=".joblib")
+    os.close(fd)
+    try:
+        joblib.dump(value, temporary)
+        os.replace(temporary, path)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
 
 
 def reference_date() -> pd.Timestamp:
@@ -71,9 +85,9 @@ def run_pipeline(
 
     # 5) Salva artefatos para a API carregar depois
     artifacts_dir.mkdir(parents=True, exist_ok=True)
-    joblib.dump(churn_model, artifacts_dir / "churn_model.joblib")
-    joblib.dump(similarity, artifacts_dir / "recommender.joblib")
-    joblib.dump(elasticities, artifacts_dir / "elasticity.joblib")
+    atomic_dump(churn_model, artifacts_dir / "churn_model.joblib")
+    atomic_dump(similarity, artifacts_dir / "recommender.joblib")
+    atomic_dump(elasticities, artifacts_dir / "elasticity.joblib")
 
     metrics = {
         "churn": churn_metrics,

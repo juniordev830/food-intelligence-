@@ -15,6 +15,8 @@ produção, o ideal é combinar com testes A/B de preço.
 
 from __future__ import annotations
 
+import math
+
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
@@ -43,7 +45,7 @@ def estimate_elasticities(orders: pd.DataFrame) -> pd.DataFrame:
             }
         )
 
-    return pd.DataFrame(rows).set_index("product_id")
+    return pd.DataFrame(rows, columns=["product_id", "elasticity", "r2", "n_obs"]).set_index("product_id")
 
 
 def simulate_price_change(
@@ -56,11 +58,23 @@ def simulate_price_change(
 
     Usa a forma log-log: nova_qtd = qtd_atual * (novo_preço / preço_atual) ** e
     """
-    ratio = new_price / current_price
-    new_quantity = current_quantity * ratio**elasticity
-
-    revenue_before = current_price * current_quantity
-    revenue_after = new_price * new_quantity
+    values = (elasticity, current_price, new_price, current_quantity)
+    if not all(math.isfinite(value) for value in values):
+        raise ValueError("Valores devem ser finitos")
+    if min(current_price, new_price, current_quantity) <= 0:
+        raise ValueError("Preços e quantidade devem ser positivos")
+    try:
+        ratio = new_price / current_price
+        if not math.isfinite(ratio) or ratio <= 0:
+            raise ValueError("Razão de preços fora dos limites numéricos")
+        new_quantity = current_quantity * ratio**elasticity
+        revenue_before = current_price * current_quantity
+        revenue_after = new_price * new_quantity
+        change = (revenue_after / revenue_before - 1) * 100
+    except (OverflowError, ZeroDivisionError) as exc:
+        raise ValueError("Simulação excede os limites numéricos") from exc
+    if not all(math.isfinite(value) for value in (new_quantity, revenue_before, revenue_after, change)):
+        raise ValueError("Simulação excede os limites numéricos")
 
     return {
         "predicted_quantity": round(float(new_quantity), 2),

@@ -172,9 +172,12 @@ def create_app(artifacts_dir: Path = config.ARTIFACTS_DIR) -> FastAPI:
             raise HTTPException(status_code=404, detail=f"Sem elasticidade estimada para {body.product_id}")
 
         elasticity = float(table.loc[body.product_id, "elasticity"])
-        result = simulate_price_change(
-            elasticity, body.current_price, body.new_price, body.current_quantity
-        )
+        try:
+            result = simulate_price_change(
+                elasticity, body.current_price, body.new_price, body.current_quantity
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
         return ElasticityResponse(product_id=body.product_id, elasticity=round(elasticity, 4), **result)
 
     return app
