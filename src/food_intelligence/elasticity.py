@@ -65,6 +65,8 @@ def simulate_price_change(
         raise ValueError("Preços e quantidade devem ser positivos")
     try:
         ratio = new_price / current_price
+        if not math.isfinite(ratio) or ratio <= 0:
+            raise ValueError("Razão de preços fora dos limites numéricos")
         new_quantity = current_quantity * ratio**elasticity
         revenue_before = current_price * current_quantity
         revenue_after = new_price * new_quantity
