@@ -41,7 +41,14 @@ def test_churn_retorna_probabilidade_e_risco(client):
 
 def test_churn_rejeita_valores_invalidos(client):
     response = client.post("/churn/predict", json={**CHURN_PAYLOAD, "recency_days": -1})
-    assert response.status_code == 422  # erro de validação do Pydantic
+    assert response.status_code == 422
+
+
+@pytest.mark.parametrize("field", ["monetary_90d", "avg_order_value"])
+@pytest.mark.parametrize("value", [float("inf"), float("-inf"), float("nan")])
+def test_churn_rejeita_valores_nao_finitos(client, field, value):
+    response = client.post("/churn/predict", json={**CHURN_PAYLOAD, field: value})
+    assert response.status_code == 422
 
 
 def test_recomendacoes_retornam_top_n(client):
@@ -60,19 +67,6 @@ def test_recomendacao_com_produto_desconhecido_retorna_404(client):
     assert response.status_code == 404
 
 
-def test_elasticidade_aumento_de_preco_reduz_quantidade(client):
-    response = client.post(
-        "/elasticity/simulate",
-        json={"product_id": "P000", "current_price": 10.0, "new_price": 11.0, "current_quantity": 100.0},
-    )
-    body = response.json()
-
-    assert response.status_code == 200
-    assert body["elasticity"] < 0
-    assert body["predicted_quantity"] < 100
-
-
-
 def test_recomendacoes_normalizam_espacos_em_ids(client):
     response = client.post(
         "/recommendations", json={"purchased_product_ids": [" P000 "], "top_n": 3}
@@ -87,6 +81,32 @@ def test_recomendacoes_rejeitam_id_vazio_ou_so_com_espacos(client):
         "/recommendations", json={"purchased_product_ids": ["   "]}
     )
     assert response.status_code == 422
+
+
+def test_recomendacoes_rejeitam_id_excessivamente_longo(client):
+    response = client.post(
+        "/recommendations", json={"purchased_product_ids": ["P" * 101]}
+    )
+    assert response.status_code == 422
+
+
+def test_recomendacoes_rejeitam_mais_de_500_ids(client):
+    response = client.post(
+        "/recommendations", json={"purchased_product_ids": ["P000"] * 501}
+    )
+    assert response.status_code == 422
+
+
+def test_elasticidade_aumento_de_preco_reduz_quantidade(client):
+    response = client.post(
+        "/elasticity/simulate",
+        json={"product_id": "P000", "current_price": 10.0, "new_price": 11.0, "current_quantity": 100.0},
+    )
+    body = response.json()
+
+    assert response.status_code == 200
+    assert body["elasticity"] < 0
+    assert body["predicted_quantity"] < 100
 
 
 def test_elasticidade_normaliza_id_do_produto(client):
@@ -121,7 +141,6 @@ def test_sem_modelos_treinados_a_api_responde_503(tmp_path):
     response = empty_client.post("/churn/predict", json=CHURN_PAYLOAD)
     assert response.status_code == 503
     assert "food_intelligence.train" in response.json()["detail"]
-
 
 
 def test_model_store_reloads_artifact_when_file_changes(tmp_path):
