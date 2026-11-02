@@ -57,6 +57,8 @@ class RecommendationRequest(BaseModel):
         normalized = [value.strip() for value in values]
         if any(not value for value in normalized):
             raise ValueError("IDs de produto não podem ser vazios")
+        if any(len(value) > 100 for value in normalized):
+            raise ValueError("IDs de produto devem ter no máximo 100 caracteres")
         return normalized
 
 
