@@ -141,6 +141,20 @@ def create_app(artifacts_dir: Path = config.ARTIFACTS_DIR) -> FastAPI:
         """Verifica se a API está no ar."""
         return {"status": "ok"}
 
+    @app.get("/ready")
+    def ready() -> dict[str, Any]:
+        """Indica se os artefatos necessários para cada predição estão disponíveis."""
+        model_names = ("churn_model", "recommender", "elasticity")
+        models = {
+            name: (artifacts_dir / f"{name}.joblib").is_file()
+            for name in model_names
+        }
+        return {
+            "status": "ready" if all(models.values()) else "degraded",
+            "models": models,
+            "training_hint": TRAIN_HINT if not all(models.values()) else None,
+        }
+
     @app.post("/churn/predict", response_model=ChurnResponse)
     def predict_churn(body: ChurnRequest) -> ChurnResponse:
         """Probabilidade de um cliente parar de comprar nos próximos 60 dias."""
