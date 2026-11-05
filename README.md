@@ -77,7 +77,7 @@ Para instruções detalhadas, exemplos de chamadas e fluxo de treino, consulte o
 
 ## Reprodutibilidade e qualidade
 
-- Prefira sementes aleatórias configuráveis para geração de dados.
+- Prefira sementes aleatórias configuráveis para geração de dados. O gerador aceita quantidades inteiras positivas de clientes e produtos; mesmo com apenas 1–3 produtos, as categorias favoritas são escolhidas apenas dentre as presentes no catálogo sintético.
 - Separe treino e avaliação para evitar vazamento de dados.
 - Compare modelos com métricas adequadas ao problema.
 - Documente hipóteses, limitações e versões das dependências.
