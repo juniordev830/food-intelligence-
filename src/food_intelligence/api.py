@@ -96,6 +96,10 @@ class ElasticityResponse(BaseModel):
 
 # ---------- Carregamento sob demanda dos artefatos ----------
 
+class ModelArtifactError(RuntimeError):
+    """The expected local model artifact exists but cannot be loaded."""
+
+
 class ModelStore:
     """Guarda os artefatos em memória, lendo do disco só quando necessário."""
 
@@ -113,7 +117,13 @@ class ModelStore:
         cached = self._cache.get(name)
         signature = (stat.st_mtime_ns, stat.st_size)
         if cached is None or cached[:2] != signature:
-            self._cache[name] = (*signature, joblib.load(path))
+            try:
+                model = joblib.load(path)
+            except Exception as exc:
+                # Untrusted joblib files must never be loaded: pickle is executable.
+                # This handles malformed or incompatible *trusted local* artifacts.
+                raise ModelArtifactError(name) from exc
+            self._cache[name] = (*signature, model)
         return self._cache[name][2]
 
 
@@ -121,7 +131,7 @@ def _load_or_503(store: ModelStore, name: str) -> Any:
     """Se o modelo não existe, responde 503 (serviço indisponível) com instrução clara."""
     try:
         return store.get(name)
-    except FileNotFoundError as exc:
+    except (OSError, ModelArtifactError) as exc:
         raise HTTPException(status_code=503, detail=TRAIN_HINT) from exc
 
 
@@ -145,10 +155,16 @@ def create_app(artifacts_dir: Path = config.ARTIFACTS_DIR) -> FastAPI:
     def ready() -> dict[str, Any]:
         """Indica se os artefatos necessários para cada predição estão disponíveis."""
         model_names = ("churn_model", "recommender", "elasticity")
-        models = {
-            name: (artifacts_dir / f"{name}.joblib").is_file()
-            for name in model_names
-        }
+        models: dict[str, bool] = {}
+        for name in model_names:
+            try:
+                # A file existing is not enough: a damaged artifact cannot
+                # serve predictions and must not produce false readiness.
+                store.get(name)
+            except (OSError, ModelArtifactError):
+                models[name] = False
+            else:
+                models[name] = True
         return {
             "status": "ready" if all(models.values()) else "degraded",
             "models": models,
