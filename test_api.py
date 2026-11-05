@@ -139,3 +139,17 @@ def test_model_store_reloads_artifact_when_file_changes(tmp_path):
     )
 
     assert store.get("sample") == {"version": 2}
+
+
+def test_corrupted_model_file_causes_503_instead_of_500_and_degrades_readiness(tmp_path):
+    """An existing but invalid local artifact must not count as a ready model."""
+    (tmp_path / "churn_model.joblib").write_bytes(b"not a valid joblib artifact")
+    client = TestClient(create_app(tmp_path))
+    readiness = client.get("/ready")
+    assert readiness.status_code == 200
+    assert readiness.json()["status"] == "degraded"
+    assert readiness.json()["models"]["churn_model"] is False
+
+    response = client.post("/churn/predict", json=CHURN_PAYLOAD)
+    assert response.status_code == 503
+    assert response.json()["detail"] == "Modelo ainda não treinado. Rode: python -m food_intelligence.train"
