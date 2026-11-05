@@ -105,7 +105,7 @@ class ModelStore:
 
     def __init__(self, directory: Path):
         self.directory = directory
-        self._cache: dict[str, tuple[int, int, Any]] = {}
+        self._cache: dict[str, tuple[tuple[int, int, int, int], Any]] = {}
 
     def get(self, name: str) -> Any:
         path = self.directory / f"{name}.joblib"
@@ -115,16 +115,16 @@ class ModelStore:
             raise FileNotFoundError(path) from None
 
         cached = self._cache.get(name)
-        signature = (stat.st_mtime_ns, stat.st_size)
-        if cached is None or cached[:2] != signature:
+        signature = (stat.st_mtime_ns, stat.st_size, stat.st_ctime_ns, stat.st_ino)
+        if cached is None or cached[0] != signature:
             try:
                 model = joblib.load(path)
             except Exception as exc:
                 # Untrusted joblib files must never be loaded: pickle is executable.
                 # This handles malformed or incompatible *trusted local* artifacts.
                 raise ModelArtifactError(name) from exc
-            self._cache[name] = (*signature, model)
-        return self._cache[name][2]
+            self._cache[name] = (signature, model)
+        return self._cache[name][1]
 
 
 def _load_or_503(store: ModelStore, name: str) -> Any:
