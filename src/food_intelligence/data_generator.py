@@ -48,6 +48,10 @@ def generate_dataset(
     seed: int = config.RANDOM_SEED,
 ) -> dict[str, pd.DataFrame]:
     """Gera as três tabelas sintéticas de forma reproduzível (mesma seed = mesmos dados)."""
+    if isinstance(n_customers, bool) or not isinstance(n_customers, int) or n_customers < 1:
+        raise ValueError("n_customers deve ser um inteiro positivo")
+    if isinstance(n_products, bool) or not isinstance(n_products, int) or n_products < 1:
+        raise ValueError("n_products deve ser um inteiro positivo")
     rng = np.random.default_rng(seed)
     start = pd.Timestamp(config.SIMULATION_START)
     horizon = config.SIMULATION_DAYS
@@ -91,7 +95,9 @@ def generate_dataset(
     )
 
     # ---------- 3. Pedidos ----------
-    cat_names = sorted(CATEGORY_BASE_PRICE)
+    # Favorite categories must be present in this particular synthetic catalog.
+    # With 1–2 products, choosing among all categories could leave fav_idx empty.
+    cat_names = sorted(products["category"].unique())
     prod_ids = products["product_id"].to_numpy()
     prod_base_price = products["base_price"].to_numpy()
     prod_elasticity = products["elasticidade_real"].to_numpy()
@@ -106,7 +112,7 @@ def generate_dataset(
         rate_per_day = orders_per_month[i] / 30
 
         # Cada cliente tem 2 categorias favoritas: é isso que cria padrões de recomendação
-        fav_cats = rng.choice(cat_names, size=2, replace=False)
+        fav_cats = rng.choice(cat_names, size=min(2, len(cat_names)), replace=False)
         fav_idx = np.flatnonzero(np.isin(prod_category, fav_cats))
 
         t = float(signup_day[i])
