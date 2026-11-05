@@ -1,6 +1,7 @@
 """Testes do gerador de dados sintéticos."""
 
 import pandas as pd
+import pytest
 
 from food_intelligence.data_generator import generate_dataset
 
@@ -42,3 +43,24 @@ def test_cliente_so_compra_depois_do_cadastro():
     tables = _small(seed=2)
     merged = tables["orders"].merge(tables["customers"], on="customer_id")
     assert (merged["order_date"] >= merged["signup_date"]).all()
+
+
+@pytest.mark.parametrize("n_products", [1, 2, 3])
+@pytest.mark.parametrize("seed", [0, 1, 2, 5])
+def test_tiny_catalog_never_selects_missing_favorite_categories(n_products, seed):
+    tables = generate_dataset(n_customers=20, n_products=n_products, seed=seed)
+    catalog = set(tables["products"]["product_id"])
+    assert len(catalog) == n_products
+    assert set(tables["orders"]["product_id"]).issubset(catalog)
+    assert tables["orders"]["product_id"].notna().all()
+
+
+@pytest.mark.parametrize("field,value", [
+    ("n_products", 0), ("n_products", -1), ("n_products", True), ("n_products", 1.5),
+    ("n_customers", 0), ("n_customers", -2), ("n_customers", False), ("n_customers", 3.5),
+])
+def test_generator_rejects_invalid_catalog_or_customer_counts(field, value):
+    options = {"n_customers": 10, "n_products": 4, "seed": 1}
+    options[field] = value
+    with pytest.raises(ValueError, match="inteiro positivo"):
+        generate_dataset(**options)
