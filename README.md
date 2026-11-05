@@ -57,7 +57,7 @@ A API está em `src/food_intelligence/api.py`. Depois de instalar o pacote, exec
 uvicorn food_intelligence.api:app --reload
 ```
 
-A documentação interativa fica em `http://127.0.0.1:8000/docs`. Os endpoints de predição dependem dos artefatos de modelo treinados; se estiverem ausentes **ou corrompidos/incompatíveis**, a API responde HTTP 503 e orienta executar `python -m food_intelligence.train`. O endpoint `/ready` tenta carregar os modelos locais necessários (com cache) e retorna `degraded` caso um deles não possa ser carregado; a primeira consulta pode levar mais tempo. **Arquivos joblib/pickle devem vir apenas de fonte local confiável**, pois o carregamento pode executar código. Não aceite uploads de modelos de terceiros. O servidor local não publica a API na internet automaticamente.
+A documentação interativa fica em `http://127.0.0.1:8000/docs`. Os endpoints de predição dependem dos artefatos de modelo treinados; se estiverem ausentes **ou corrompidos/incompatíveis**, a API responde HTTP 503 e orienta executar `python -m food_intelligence.train`. O endpoint `/ready` tenta carregar os modelos locais necessários (com cache) e retorna `degraded` caso um deles não possa ser carregado; a primeira consulta pode levar mais tempo. O cache observa também o inode e o horário de alteração dos metadados, detectando a substituição atômica de um arquivo mesmo quando tamanho e data de modificação permanecem iguais. **Arquivos joblib/pickle devem vir apenas de fonte local confiável**, pois o carregamento pode executar código. Não aceite uploads de modelos de terceiros. O servidor local não publica a API na internet automaticamente.
 
 Confirme o módulo de importação e a configuração do projeto caso execute a API a partir de outro diretório.
 
