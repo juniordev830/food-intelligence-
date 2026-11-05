@@ -153,3 +153,24 @@ def test_corrupted_model_file_causes_503_instead_of_500_and_degrades_readiness(t
     response = client.post("/churn/predict", json=CHURN_PAYLOAD)
     assert response.status_code == 503
     assert response.json()["detail"] == "Modelo ainda não treinado. Rode: python -m food_intelligence.train"
+
+
+def test_model_store_detects_atomic_replacement_with_identical_mtime_and_size(tmp_path):
+    """Reload a newly published model, even when the old cache signature matches."""
+    artifact = tmp_path / "sample.joblib"
+    joblib.dump({"version": 1}, artifact)
+    store = ModelStore(tmp_path)
+    assert store.get("sample") == {"version": 1}
+    previous = artifact.stat()
+
+    replacement = tmp_path / "replacement.joblib"
+    joblib.dump({"version": 2}, replacement)
+    os.utime(
+        replacement,
+        ns=(previous.st_atime_ns, previous.st_mtime_ns),
+    )
+    assert replacement.stat().st_size == previous.st_size
+    assert replacement.stat().st_mtime_ns == previous.st_mtime_ns
+
+    replacement.replace(artifact)
+    assert store.get("sample") == {"version": 2}
