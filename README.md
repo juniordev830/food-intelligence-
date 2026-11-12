@@ -91,3 +91,7 @@ Para instruções detalhadas, exemplos de chamadas e fluxo de treino, consulte o
 - Versionar datasets sintéticos e relatórios de experimentos sem incluir artefatos grandes desnecessários.
 
 Projeto de portfólio em desenvolvimento.
+
+## Verificação antes de contribuir
+
+O [guia de validação](docs/GUIA_DE_VALIDACAO.md) descreve o estado do código, as verificações reproduzíveis e os riscos a observar ao revisar novas alterações.
